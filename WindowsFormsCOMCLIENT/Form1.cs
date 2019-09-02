@@ -20,10 +20,10 @@ namespace WindowsFormsCOMCLIENT
         {
             InitializeComponent();
         }
-
+        static int port = 15195;
         static IPHostEntry ipHostInfo = Dns.GetHostEntry(Dns.GetHostName());
         static IPAddress ipAddress = ipHostInfo.AddressList[0];
-        static IPEndPoint remoteEP = new IPEndPoint(ipAddress, 11000);
+        static IPEndPoint remoteEP = new IPEndPoint(ipAddress, port);
 
         static Socket sender = new Socket(AddressFamily.InterNetwork,
             SocketType.Stream, ProtocolType.Tcp);
@@ -46,7 +46,7 @@ namespace WindowsFormsCOMCLIENT
                         data = null;
                         bytes = new byte[1024];
                         int bytesRec = socket.Receive(bytes);
-                        data += Encoding.UTF8.GetString(bytes, 0, bytesRec);
+                        data += Encoding.Unicode.GetString(bytes, 0, bytesRec);
                         BeginInvoke(new Action(() => history.Items.Add(data.ToString())));
                     }
                     else
@@ -91,7 +91,7 @@ namespace WindowsFormsCOMCLIENT
                     {
                         if (message.TrimStart().TrimEnd() != null)
                         {
-                            byte[] msg = Encoding.UTF8.GetBytes(message);
+                            byte[] msg = Encoding.Unicode.GetBytes(message);
                             socket.Send(msg);
                             BeginInvoke(new Action(() => RichText.Text = ""));
                             BeginInvoke(new Action(() => message = ""));
@@ -121,7 +121,7 @@ namespace WindowsFormsCOMCLIENT
             {
                 ipAddress = IPAddress.Parse(CurretIp.Text);
                 sender = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
-                remoteEP = new IPEndPoint(ipAddress, 11000);
+                remoteEP = new IPEndPoint(ipAddress, port);
                 sender.Connect(remoteEP);
                 history.Items.Add("Connected.");
 
