@@ -48,6 +48,7 @@ namespace WindowsFormsCOMCLIENT
                         int bytesRec = socket.Receive(bytes);
                         data += Encoding.Unicode.GetString(bytes, 0, bytesRec);
                         BeginInvoke(new Action(() => history.Items.Add(data.ToString())));
+                        BeginInvoke(new Action(() => history.TopIndex = history.Items.Count - 1));
                     }
                     else
                     {
@@ -87,16 +88,26 @@ namespace WindowsFormsCOMCLIENT
             {
                 if (nick.Length >= 3)
                 {
-                    if (SocketConnected(socket))
+                    if (nick.Length < 6)
                     {
-                        if (message.TrimStart().TrimEnd() != null)
+                        if (message.Length < 33)
                         {
-                            byte[] msg = Encoding.Unicode.GetBytes(message);
-                            socket.Send(msg);
-                            BeginInvoke(new Action(() => RichText.Text = ""));
-                            BeginInvoke(new Action(() => message = ""));
+                            if (SocketConnected(socket))
+                            {
+                                if (message.TrimStart().TrimEnd() != null)
+                                {
+                                    byte[] msg = Encoding.Unicode.GetBytes(message);
+                                    socket.Send(msg);
+                                    BeginInvoke(new Action(() => RichText.Text = ""));
+                                    BeginInvoke(new Action(() => message = ""));
+                                }
+                            }
                         }
+                        else
+                            MessageBox.Show("Сообщение не может быть длиннее 33 символов!");
                     }
+                    else
+                        MessageBox.Show("Ник не может длиннее 6 символов!");
                 }
                 else
                     MessageBox.Show("Ник не может короче 3 символов!");
@@ -117,41 +128,42 @@ namespace WindowsFormsCOMCLIENT
 
         private void Button1_Click(object Mainsender, EventArgs MainE)
         {
-            try
-            {
-                ipAddress = IPAddress.Parse(CurretIp.Text);
-                sender = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
-                remoteEP = new IPEndPoint(ipAddress, port);
-                sender.Connect(remoteEP);
-                history.Items.Add("Connected.");
-
-                SetName sn = new SetName();
-                sn.Show();
-
-                new Thread(() =>
+            if (!sender.Connected)
+                try
                 {
-                    Thread.CurrentThread.IsBackground = true;
-                    GetMessageFromServer(sender, Mainsender, MainE);
-                }).Start();
-            }
-            catch (ArgumentNullException ane)
-            {
-                MessageBox.Show("ArgumentNullException: " + ane.ToString());
-            }
-            catch (SocketException se)
-            {
-                MessageBox.Show("SocketException: " + se.ToString());
-            }
-            catch (Exception e)
-            {
-                MessageBox.Show("Unexpected exception: " + e.ToString());
-            }
+                    ipAddress = IPAddress.Parse(CurretIp.Text);
+                    sender = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
+                    remoteEP = new IPEndPoint(ipAddress, port);
+                    sender.Connect(remoteEP);
+                    history.Items.Add("Connected.");
+
+                    SetName sn = new SetName();
+                    sn.Show();
+
+                    new Thread(() =>
+                    {
+                        Thread.CurrentThread.IsBackground = true;
+                        GetMessageFromServer(sender, Mainsender, MainE);
+                    }).Start();
+                }
+                catch (ArgumentNullException ane)
+                {
+                    MessageBox.Show("ArgumentNullException: " + ane.ToString());
+                }
+                catch (SocketException se)
+                {
+                    MessageBox.Show("SocketException: " + se.ToString());
+                }
+                catch (Exception e)
+                {
+                    MessageBox.Show("Unexpected exception: " + e.ToString());
+                }
         }
 
 
         private void Button2_Click(object Mainsender, EventArgs MainE)
         {
-            if (sender != default)
+            if (sender.Connected)
                 if (SocketConnected(sender))
                     sender.Close();
         }
